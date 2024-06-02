@@ -19,7 +19,7 @@ public class CharatcerController : MonoBehaviour
     public UnityEngine.UI.Button backButton;
     public UnityEngine.UI.Button replayButton;
 
-    public Material recordMaterial, playMaterial;
+    public Material recordMaterial, playMaterial, defaultMaterial;
     public MeshRenderer sphere;
 
     public bool isRecording = false;
@@ -32,7 +32,7 @@ public class CharatcerController : MonoBehaviour
     private List<FrameData> recordedFrames = new List<FrameData>();
     private int currentFrame = 0;
     private List<List<FrameData>> records = new List<List<FrameData>>();
-    private int selectedIndex = 0;
+    private int selectedIndex;
     private List<FrameData> currentRecord = new List<FrameData>();
 
     private void Start()
@@ -48,11 +48,6 @@ public class CharatcerController : MonoBehaviour
         animator.enabled = false;
     }
 
-    public void SelectRecord(int  val)
-    {
-        selectedIndex = val;
-    }
-
     private void Update()
     {
         if (isRecording)
@@ -62,7 +57,7 @@ public class CharatcerController : MonoBehaviour
         if (isReplaying)
         {
             
-            PlayFrame(selectedIndex);
+            PlayFrame();
         }
         if( !isBackward )
         {
@@ -126,6 +121,8 @@ public class CharatcerController : MonoBehaviour
     {
         isReplaying = true;
         isRecording = false;
+
+        selectedIndex = dropdown.value - 1;
         sphere.material = playMaterial;
         animator.enabled = false;
     }
@@ -136,14 +133,16 @@ public class CharatcerController : MonoBehaviour
         {
             isRecording = true;
             recordedFrames.Clear();
+            sphere.material = recordMaterial;
         }
         else
         {
-            sphere.material = recordMaterial;
+            
             isRecording = false;
+            sphere.material = defaultMaterial;
             records.Add(recordedFrames.ToList());
-            var data = new UnityEngine.UI.Dropdown.OptionData();
-            data.text = $"Record {records.Count}";
+            var data = new Dropdown.OptionData();
+            data.text = $"Record{records.Count}: {gameObject.name}, ({DateTime.Now.Date})";
             dropdown.options.Add(data);
             recordedFrames.Clear();
         }
@@ -154,20 +153,25 @@ public class CharatcerController : MonoBehaviour
         isRecording = false;
     }
 
-    private void PlayFrame(int index)
+    private void PlayFrame()
     {
-        if (records[index] == null)
+        if (selectedIndex < 0)
         {
-            Debug.Log(records[index]);
-            return;
-        }
-        if (records[index].Count == 0)
-        {
-            Debug.Log(records[index].Count);
             return;
         }
 
-        if (currentFrame >= records[index].Count)
+        if (records[selectedIndex] == null)
+        {
+            Debug.Log(records[selectedIndex]);
+            return;
+        }
+        if (records[selectedIndex].Count == 0)
+        {
+            Debug.Log(records[selectedIndex].Count);
+            return;
+        }
+
+        if (currentFrame >= records[selectedIndex].Count)
         {
             StopMotion();
             currentFrame = 0;
@@ -175,7 +179,7 @@ public class CharatcerController : MonoBehaviour
             return;
         }
 
-        FrameData frame = records[index][currentFrame];
+        FrameData frame = records[selectedIndex][currentFrame];
         int i = 0;
         foreach (Transform bone in animator.GetComponentsInChildren<Transform>())
         {
